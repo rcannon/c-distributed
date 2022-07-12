@@ -1,0 +1,12 @@
+
+Hi from rank 0 of 16!
+
+My processor is
+dl02.local
+proc name length: 10
+
+Maximum processor name length is 10
+
+The argc value is 1
+
+Sum of MPI ranks: 120

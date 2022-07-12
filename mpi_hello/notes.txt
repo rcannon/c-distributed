@@ -1,0 +1,39 @@
+
+MPI function often take the following data:
+- buffer :: [some_type]
+- length :: int
+- datatype :: MPI_BYTE, MPI_DOUBLE, MPI_INTEGER, etc
+    - Always send data as MPI_BYTE
+- source/dest :: mpi_rank
+- tag :: int > 0
+    - this is just a message label to help sort messages in queue
+    - use a different tag for each message (i.e. incremeent for each one)
+    - sender and reciever tags have to match
+- communicator
+    - we will use MPI_COMM_WORLD for now
+- event 
+
+
+have setup mpi function
+setup_mpi(&argc, &argv, &my_mpi_rank, &mpi_size)
+
+
+want to know what node each process is on
+    - MPI_Get_processor_name
+    - how long is name? try 64 chars
+    -DO: modify hello world to print out processor name
+also: what to know how many ranks on my node?
+also: which is the lowest rank on my node
+also: what is my relative node rank (how many ranks on my node are less than my node)
+
+DO: allocate character array to gather all the hostnames for each rank
+    - need to know how long the character names are (what is the maximum?)
+        - use MPI_Reduce on result_len with MPI_MAX operator
+    - allocate n_ranks * max_result_len to recieve all the hostnames
+        - use Better MPI_Gatherv (stands for gather vector)
+            - args:
+                - length of vector pieces to be gathered
+                - rank zero (or whatever root rank is used) needs to have offset vector where each of the results will go in the aggregated (gathered) buffer
+                    - we will always choose root rank to be zero
+
+
