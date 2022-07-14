@@ -46,9 +46,6 @@ main(int argc, char** argv)
         fflush(my_lfp);
     }
 
-    // setup mpi communication structure
-    success = setup_mpi_nodes(my_lfp, mpi_size);
-
     //
     // main
     //

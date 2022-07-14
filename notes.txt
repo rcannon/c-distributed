@@ -1,0 +1,120 @@
+
+MPI function often take the following data:
+- buffer :: [some_type]
+- length :: int
+- datatype :: MPI_BYTE, MPI_DOUBLE, MPI_INTEGER, etc
+    - Always send data as MPI_BYTE
+- source/dest :: mpi_rank
+- tag :: int > 0
+    - this is just a message label to help sort messages in queue
+    - use a different tag for each message (i.e. incremeent for each one)
+    - sender and reciever tags have to match
+- communicator
+    - we will use MPI_COMM_WORLD for now
+- event 
+
+
+have setup mpi function
+setup_mpi(&argc, &argv, &my_mpi_rank, &mpi_size)
+
+
+want to know what node each process is on
+    - MPI_Get_processor_name
+    - how long is name? try 64 chars
+    -DO: modify hello world to print out processor name
+also: what to know how many ranks on my node?
+also: which is the lowest rank on my node
+also: what is my relative node rank (how many ranks on my node are less than my node)
+
+DO: allocate character array to gather all the hostnames for each rank
+    - need to know how long the character names are (what is the maximum?)
+        - use MPI_Reduce on result_len with MPI_MAX operator
+    - allocate n_ranks * max_result_len to recieve all the hostnames
+        - use Better MPI_Gatherv (stands for gather vector)
+            - args:
+                - length of vector pieces to be gathered
+                - rank zero (or whatever root rank is used) needs to have offset vector where each of the results will go in the aggregated (gathered) buffer
+                    - we will always choose root rank to be zero
+
+# Gather the proc_names
+char proc_name_buffer[64]
+char *proc_name
+proc_name = proc_name_buffer[0]
+int proc_name_length
+proc_name_lenght = 16; set to 16 (least pow of 2 over 11 len(dc001.local)
+char *proc_name_list
+ask_for = n_ranks * proc_name_len
+one_l = (int64_t) 1;
+proc_name_list = (char *) calloc (one1, ask_for)
+ask_for = (int64_t) size_of(int) * p
+displacements = (int*) calloc (one_l, ask_for)
+
+for (i=0; i < n_ranks, i++){
+		displacements[i] = proc_name_len * i
+}
+root = 0;
+mpi_error = MPI_Gaterv(proc_name, proc_name len, MPI_BYTE, proc_name_list, displacements, MPI_BYTE, rot, MPI_COMM_WORLD)
+
+We will use something better than Gatherv later.
+
+-- Sbatch script
+#SBATCH -N 2
+#SBATCH --tasks_per_node=4
+
+mpirun -n 8 ./hello
+
+-- sorting the list (index sort)
+- sort the proc names with their mpi rank tracking with them.
+- think of mpi_rank, proc_name as a record, which you will sort on processor name
+- track permutation 
+- hint: think merge sort, use an extra vector of lenghth proc_name_len * n_ranks for scratch
+
+once we have the sorted list, walk it linearly (on root rank) and count the number of 
+		changes in the processor name (= number of nodes in -N sbatch arg)
+ - also, for each rank, identify which node (0 to N-1) of the assigned nodes (by slurm) 
+		each rank is on and find the lowest rank on each node.
+ - Build a list of mpi ranks (integer array) sorted by node first, then by mpi_rank within a node
+  - ransk on node 0 followed by ranks on node 1
+  - num_ranks_per_node[N-1]
+ - build a delimiter_of_ranks_per_node array
+  - delim[0] = 0, delim[i] = delim[i-1] + num_ranks[i]
+
+-- Communication trees for MPI ranks
+- my_rank is in [0.. n_ranks-1]
+- MPI_Broadcast replacement
+ - parent from whom I recieve messages to distribute data
+ - children to whom I send data that I revieved from parent
+- MPI Gather replacement
+ - recive from children, send to parent
+- c code:
+
+struct comm_tree {
+int parent;
+int num_children;
+int* children_list;
+}
+
+- root of the tree does not have a parent, so set parent = -1
+- binary tree c code:
+
+if my_rank == 0 {
+parent = -1
+}
+else {
+parent =(my_rank - 1) >> 1;
+}
+left = my_rank * 2 + 1
+right = left + 1;
+if (left < p) {
+	child[0] = left;
+	num_children = 1;
+	if (right < p) {
+		child[1] = right;
+		num_children = 2;
+	}
+}
+
+ 
+
+DO: build a binary tree, have each rank print out its parent, number of children, and children
+ - make sure each node has it's own binary tree

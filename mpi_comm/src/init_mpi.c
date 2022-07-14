@@ -9,9 +9,8 @@ int
 init_mpi
     ( int* argc
     , char*** argv
-    , int* my_mpi_rank_p
-    , int* n_mpi_ranks_p
-    )
+ 	, struct mpi_comm_struct * my_comm_struct
+	)
 {
     MPI_Comm comm;
     int mpi_error;
@@ -22,7 +21,7 @@ init_mpi
     success = 1;
 
     mpi_error = MPI_Init(argc, argv);
-    comm = MPI_COMM_WORLD;
+    comm = my_mpi_struct->comm;
     success = check_mpi_error(stderr, "MPI_Init failed", comm,  mpi_error);
 
     if (success) {
@@ -40,8 +39,8 @@ init_mpi
         success = check_mpi_error(stderr, "MPI_Comm_size failed", comm, mpi_error);
     }
 
-    *my_mpi_rank_p = my_mpi_rank;
-    *n_mpi_ranks_p = n_mpi_ranks;
+    my_mpi_struct->mpi_rank = my_mpi_rank;
+    my_mpi_struct->n_mpi_ranks = n_mpi_ranks;
 
     return success;
 }
